@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0754a5">
+    <meta name="description" content="Simulador de médias para Ciência de Dados e IA.">
+    <title>Simulador de média | Ciência de dados e IA</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="page-header">
+        <div class="eyebrow">Ciencia de dados e IA</div>
+        <h1>Simulador de média</h1>
+        <p class="subtitle">Consulte sua média parcial e planeje as próximas avaliações.</p>
+      </header>
+
+      <nav class="tabs" role="tablist" aria-label="Calculadoras">
+        <button class="tab-button is-active" id="tab-average" type="button" role="tab" aria-selected="true" aria-controls="panel-average" data-tab="average">Média final</button>
+        <button class="tab-button" id="tab-needed" type="button" role="tab" aria-selected="false" aria-controls="panel-needed" data-tab="needed" tabindex="-1">Quanto preciso na P2?</button>
+        <button class="tab-button" id="tab-custom" type="button" role="tab" aria-selected="false" aria-controls="panel-custom" data-tab="custom" tabindex="-1">Criar matéria</button>
+      </nav>
+
+      <section class="panel" id="panel-average" role="tabpanel" aria-labelledby="tab-average">
+        <div class="panel-heading">
+          <div>
+            <h2>Notas por matéria</h2>
+            <p>A média parcial é atualizada conforme você informa as notas.</p>
+          </div>
+          <button class="clear-button" type="button" data-clear="average">Limpar notas</button>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <caption class="sr-only">Notas e média final por matéria</caption>
+            <thead>
+              <tr>
+                <th scope="col">Matéria</th>
+                <th scope="col">P1 <span>40%</span></th>
+                <th scope="col">P2 <span>40%</span></th>
+                <th scope="col">AT <span>20%</span></th>
+                <th scope="col">Média</th>
+              </tr>
+            </thead>
+            <tbody id="average-rows"></tbody>
+          </table>
+        </div>
+        <p class="table-note">Notas de 0 a 10. Os valores ficam somente nesta página e são apagados ao recarregá-la.</p>
+      </section>
+
+      <section class="panel" id="panel-needed" role="tabpanel" aria-labelledby="tab-needed" hidden>
+        <div class="panel-heading">
+          <div>
+            <h2>Nota necessária na P2</h2>
+            <p>Informe P1 e AT para calcular a menor nota na P2 que fecha média 5.</p>
+          </div>
+          <button class="clear-button" type="button" data-clear="needed">Limpar P1 e AT</button>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <caption class="sr-only">Notas P1 e AT e nota necessária na P2 por matéria</caption>
+            <thead>
+              <tr>
+                <th scope="col">Matéria</th>
+                <th scope="col">P1 <span>40%</span></th>
+                <th scope="col">AT <span>20%</span></th>
+                <th scope="col">P2 necessária</th>
+              </tr>
+            </thead>
+            <tbody id="needed-rows"></tbody>
+          </table>
+        </div>
+        <p class="table-note">O cálculo considera notas de 0 a 10 e arredonda a P2 necessária para cima ao próximo décimo.</p>
+      </section>
+
+      <section class="panel custom-panel" id="panel-custom" role="tabpanel" aria-labelledby="tab-custom" hidden>
+        <div class="panel-heading">
+          <div>
+            <h2>Monte uma matéria</h2>
+            <p>Defina o nome das avaliações e o peso de cada uma. Os pesos precisam somar 100%.</p>
+          </div>
+        </div>
+        <form id="custom-course-form" novalidate>
+          <label class="field-label" for="custom-subject-name">Nome da matéria</label>
+          <input class="text-field" id="custom-subject-name" name="subject" type="text" maxlength="90" placeholder="Ex.: Projeto de dados" required>
+
+          <div class="assessment-heading">
+            <h3>Avaliações e pesos</h3>
+            <span>Informe o peso em porcentagem (10% = 0,1).</span>
+          </div>
+          <div id="evaluation-editor" class="evaluation-editor"></div>
+          <div class="weight-summary">
+            <span id="weight-total">Peso total: 100%</span>
+            <span id="weight-status" role="status">Pesos válidos</span>
+          </div>
+          <div class="form-actions">
+            <button class="secondary-button" id="add-assessment" type="button">+ Adicionar avaliação</button>
+            <button class="primary-button" type="submit">Criar matéria</button>
+          </div>
+          <p class="form-error" id="form-error" role="alert" hidden></p>
+        </form>
+
+        <div class="custom-list-heading">
+          <h2>Minhas matérias</h2>
+          <p>As notas e matérias criadas ficam apenas nesta página.</p>
+        </div>
+        <div id="custom-course-list" class="custom-course-list">
+          <p class="empty-state">Suas matérias criadas aparecerão aqui.</p>
+        </div>
+      </section>
+
+      <footer class="page-footer">
+        <div>
+          <span>Salvo automaticamente neste navegador e aparelho. Os dados não sincronizam entre dispositivos.</span>
+          <strong>Criado por: Fernando Engi Morais</strong>
+        </div>
+        <button class="clear-button" id="clear-all" type="button">Apagar todos os dados salvos</button>
+      </footer>
+    </main>
+  </body>
+</html>

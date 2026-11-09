@@ -98,6 +98,9 @@ tbody tr:hover { background: #fbfdff; }
 .custom-result { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; align-items: center; padding: 10px 12px; border-top: 1px solid var(--line); background: #eef5fc; color: #294766; font-size: 12px; font-weight: 600; }
 .custom-result .result-value { grid-column: 2; grid-row: 1 / span 2; }
 .custom-result .result-hint { grid-column: 1; margin: 0; }
+.assessment-inputs { display: flex; flex-wrap: wrap; align-items: center; gap: 7px 12px; min-width: 250px; }
+.assessment-inputs label { display: inline-flex; align-items: center; gap: 5px; color: #52677e; font-size: 10px; white-space: nowrap; }
+.assessment-inputs .grade-input { width: 62px; height: 32px; font-size: 13px; }
 
 .page-footer { display: flex; flex-direction: column; gap: 7px; padding: 16px 4px 0; color: #8290a0; font-size: 11px; line-height: 1.45; text-align: center; }
 .page-footer strong { color: #49617f; font-size: 12px; }

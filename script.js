@@ -321,78 +321,51 @@ function createCustomCourse(event) {
 }
 
 function renderCustomCourses() {
+  document.querySelectorAll('.custom-main-row, .custom-needed-row').forEach(row => row.remove());
   const list = document.querySelector('#custom-course-list');
   if (customCourses.length === 0) {
     list.innerHTML = '<p class="empty-state">Suas matérias criadas aparecerão aqui.</p>';
-    return;
+  } else {
+    list.innerHTML = customCourses.map((course, courseIndex) => `
+      <article class="custom-course">
+        <div class="custom-course-heading"><div><h3>${escapeHtml(course.name)}</h3><p>${course.evaluations.map(item => `${escapeHtml(item.name)} ${numberFormat.format(item.weight)}%`).join(' · ')}</p></div>
+        <button class="remove-course" type="button" data-delete-course="${courseIndex}">Excluir matéria</button></div>
+      </article>`).join('');
   }
-
-  list.innerHTML = customCourses.map((course, courseIndex) => `
-    <article class="custom-course" data-custom-card="${courseIndex}">
-      <div class="custom-course-heading">
-        <div>
-          <h3>${escapeHtml(course.name)}</h3>
-          <p>${course.evaluations.length} avaliações · peso total 100%</p>
-        </div>
-        <button class="remove-course" type="button" data-delete-course="${courseIndex}" aria-label="Excluir ${escapeHtml(course.name)}">Excluir matéria</button>
-      </div>
-      <div class="table-scroll">
-        <table class="custom-grade-table">
-          <caption class="sr-only">Notas das avaliações de ${escapeHtml(course.name)}</caption>
-          <thead><tr><th scope="col">Avaliação</th><th scope="col">Peso</th><th scope="col">Nota</th></tr></thead>
-          <tbody>${course.evaluations.map((evaluation, evaluationIndex) => `
-            <tr>
-              <td class="subject-name">${escapeHtml(evaluation.name)}</td>
-              <td>${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 }).format(evaluation.weight)}%</td>
-              <td><input class="grade-input" type="text" inputmode="decimal" autocomplete="off" maxlength="6" value="${escapeHtml(evaluation.grade)}" placeholder="—" aria-label="Nota de ${escapeHtml(evaluation.name)} em ${escapeHtml(course.name)}" data-custom-course="${courseIndex}" data-custom-evaluation="${evaluationIndex}"></td>
-            </tr>`).join('')}
-          </tbody>
-        </table>
-      </div>
-      <div class="custom-result">
-        <span>Média</span>
-        <strong class="result-value" id="custom-average-${courseIndex}" aria-live="polite">—</strong>
-        <span class="result-hint" id="custom-hint-${courseIndex}"></span>
-      </div>
-    </article>`).join('');
+  averageRows.insertAdjacentHTML('beforeend', customCourses.map((course, courseIndex) => `
+    <tr class="custom-main-row"><td class="subject-name">${escapeHtml(course.name)}</td>
+      <td colspan="3"><div class="assessment-inputs">${course.evaluations.map((evaluation, evaluationIndex) => `<label>${escapeHtml(evaluation.name)} (${numberFormat.format(evaluation.weight)}%) <input class="grade-input" type="text" inputmode="decimal" maxlength="6" value="${escapeHtml(evaluation.grade)}" data-custom-course="${courseIndex}" data-custom-evaluation="${evaluationIndex}" aria-label="Nota de ${escapeHtml(evaluation.name)} em ${escapeHtml(course.name)}"></label>`).join('')}</div></td>
+      <td class="result-cell"><span class="result-value" id="custom-average-${courseIndex}">—</span><span class="result-hint" id="custom-hint-${courseIndex}"></span></td></tr>`).join(''));
+  neededRows.insertAdjacentHTML('beforeend', customCourses.map((course, courseIndex) => {
+    const p2Index = course.evaluations.findIndex(item => item.name.trim().toLowerCase() === 'p2');
+    return `<tr class="custom-needed-row"><td class="subject-name">${escapeHtml(course.name)}</td><td colspan="2"><div class="assessment-inputs">${course.evaluations.map((evaluation, evaluationIndex) => evaluationIndex === p2Index ? '' : `<label>${escapeHtml(evaluation.name)} <input class="grade-input" type="text" inputmode="decimal" maxlength="6" value="${escapeHtml(evaluation.grade)}" data-custom-course="${courseIndex}" data-custom-evaluation="${evaluationIndex}" aria-label="Nota de ${escapeHtml(evaluation.name)} em ${escapeHtml(course.name)}"></label>`).join('')}</div></td><td class="result-cell"><span class="result-value" id="custom-needed-${courseIndex}">—</span><span class="result-hint" id="custom-needed-hint-${courseIndex}"></span></td></tr>`;
+  }).join(''));
+  customCourses.forEach((_, i) => updateCustomResults(i));
 }
 
-function updateCustomResult(courseIndex) {
+function updateCustomResults(courseIndex) {
   const course = customCourses[courseIndex];
-  const parsed = course.evaluations.map((evaluation) => readNumber(evaluation.grade));
-  document.querySelectorAll(`[data-custom-course="${courseIndex}"]`).forEach((input) => {
-    const valid = readNumber(input.value).valid;
-    input.classList.toggle('is-invalid', !valid);
-    input.setAttribute('aria-invalid', String(!valid));
-  });
-  customCourses.forEach((_, courseIndex) => updateCustomResult(courseIndex));
-
-  const result = document.querySelector(`#custom-average-${courseIndex}`);
-  const hint = document.querySelector(`#custom-hint-${courseIndex}`);
-  if (parsed.some((grade) => !grade.valid)) {
-    showResult(result, hint, 'Corrija a nota', 'is-impossible');
-    return;
+  const parsed = course.evaluations.map(item => readNumber(item.grade));
+  const weightSum = course.evaluations.reduce((sum, item) => sum + item.weight, 0);
+  const enteredWeight = course.evaluations.reduce((sum, item, i) => sum + (parsed[i].blank ? 0 : item.weight), 0);
+  const weightedScore = course.evaluations.reduce((sum, item, i) => sum + (parsed[i].blank || !parsed[i].valid ? 0 : parsed[i].value * item.weight), 0);
+  const avg = document.querySelector(`#custom-average-${courseIndex}`);
+  const avgHint = document.querySelector(`#custom-hint-${courseIndex}`);
+  if (parsed.some(item => !item.valid)) showResult(avg, avgHint, 'Corrija a nota', 'is-impossible');
+  else if (!enteredWeight) showResult(avg, avgHint, '—');
+  else showResult(avg, avgHint, numberFormat.format(weightedScore / enteredWeight), weightedScore / enteredWeight >= 5 ? 'is-pass' : 'is-below', enteredWeight === weightSum ? 'Média final' : 'Média parcial');
+  const p2Index = course.evaluations.findIndex(item => item.name.trim().toLowerCase() === 'p2');
+  const result = document.querySelector(`#custom-needed-${courseIndex}`);
+  const hint = document.querySelector(`#custom-needed-hint-${courseIndex}`);
+  const other = course.evaluations.map((item, i) => ({ item, i })).filter(x => x.i !== p2Index);
+  if (p2Index < 0) showResult(result, hint, 'Sem avaliação P2');
+  else if (other.some(x => !parsed[x.i].valid)) showResult(result, hint, 'Corrija a nota', 'is-impossible');
+  else if (other.some(x => parsed[x.i].blank)) showResult(result, hint, '—', '', 'Preencha as outras avaliações.');
+  else {
+    const needed = (5 - other.reduce((sum, x) => sum + parsed[x.i].value * x.item.weight / 100, 0)) / (course.evaluations[p2Index].weight / 100);
+    if (needed > 10) showResult(result, hint, 'Acima de 10', 'is-impossible');
+    else showResult(result, hint, numberFormat.format(Math.max(0, Math.ceil((needed - 1e-9) * 10) / 10)), 'is-pass', 'Nota mínima na P2.');
   }
-  const entered = parsed.flatMap((grade, index) => grade.blank ? [] : [{
-    grade: grade.value,
-    weight: course.evaluations[index].weight,
-  }]);
-  if (entered.length === 0) {
-    showResult(result, hint, '—');
-    return;
-  }
-
-  const enteredWeight = entered.reduce((sum, item) => sum + item.weight, 0);
-  const weightedScore = entered.reduce((sum, item) => sum + item.grade * item.weight, 0);
-  const average = weightedScore / enteredWeight;
-  const complete = entered.length === course.evaluations.length;
-  showResult(
-    result,
-    hint,
-    numberFormat.format(average),
-    average >= 5 ? 'is-pass' : 'is-below',
-    complete ? 'Média final' : `Média parcial · ${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 }).format(enteredWeight)}% avaliado`,
-  );
 }
 
 function handleCustomGradeInput(event) {
@@ -401,7 +374,10 @@ function handleCustomGradeInput(event) {
   const courseIndex = Number(input.dataset.customCourse);
   const evaluationIndex = Number(input.dataset.customEvaluation);
   customCourses[courseIndex].evaluations[evaluationIndex].grade = input.value;
-  updateCustomResult(courseIndex);
+  document.querySelectorAll(`[data-custom-course="${courseIndex}"][data-custom-evaluation="${evaluationIndex}"]`).forEach(other => {
+    if (other !== input) other.value = input.value;
+  });
+  updateCustomResults(courseIndex);
   saveData();
 }
 
@@ -414,10 +390,13 @@ function deleteCustomCourse(courseIndex) {
 loadSavedData();
 buildTables();
 renderEvaluationEditor();
+renderCustomCourses();
 updateFixedResults();
 
 document.querySelector('#panel-average').addEventListener('input', handleFixedGradeInput);
 document.querySelector('#panel-needed').addEventListener('input', handleFixedGradeInput);
+document.querySelector('#panel-average').addEventListener('input', handleCustomGradeInput);
+document.querySelector('#panel-needed').addEventListener('input', handleCustomGradeInput);
 document.querySelectorAll('[data-clear]').forEach((button) => {
   button.addEventListener('click', () => clearGrades(button.dataset.clear));
 });
